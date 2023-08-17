@@ -23,6 +23,8 @@ namespace Celeste.Mod.WonderTools
         public override Type SessionType => typeof(WonderToolsModuleSession);
         public static WonderToolsModuleSession Session => (WonderToolsModuleSession)Instance._Session;
 
+        private const string REPLAY_ROOT = "WonderToolsRoot";
+
         public WonderToolsModule()
         {
             Instance = this;
@@ -35,23 +37,30 @@ namespace Celeste.Mod.WonderTools
 #endif
         }
 
-        private void PHW(Session session, bool fromSaveData)
+        private void Level_OnLoad(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
         {
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "Hello world PHW");
+          Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("ifl {0}", isFromLoader));
+        }
+
+        private void AddStreaks(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
+        {
+            level.Add(new StreakCounterEntity(0));
         }
 
         public override void Load()
         {
             // TODO: apply any hooks that should always be active
-            Everest.Events.Level.OnEnter += PHW;
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "Hello world");
+            Everest.Events.Level.OnLoadLevel += Level_OnLoad;
+            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "There is a hook now");
+            Everest.Events.Level.OnLoadLevel += AddStreaks;
         }
 
 
         public override void Unload()
         {
             // TODO: unapply any hooks applied in Load()
-            Everest.Events.Level.OnEnter -= PHW;
+            Everest.Events.Level.OnLoadLevel -= Level_OnLoad;
+            Everest.Events.Level.OnLoadLevel -= AddStreaks;
         }
     }
 }
