@@ -6,31 +6,29 @@ using System.Text;
 using System.Threading.Tasks;
 using Monocle;
 
-namespace Celeste.Mod.WonderTools
+namespace Celeste.Mod.WonderTools.Streaks
 {
     public class StreakCounterEntity : Entity
     {
-        public StreakCounterEntity(int _streakCount) 
+        public StreakCounterEntity()
         {
             Tag = Tags.HUD;
-            streakCount= _streakCount;
         }
-        public int streakCount { get; set; } = 0;
         public override void Render()
         {
             if (!WonderToolsModule.Settings.Streaks) return;
             var scale = 0.5f;
             var fontSize = ActiveFont.LineHeight * scale;
-            var x = 10f;
-            var y = 120f;
+            var x = 15f;
+            var y = 130f;
 
             ActiveFont.DrawOutline(
-                String.Format("Streak: {0}", streakCount),
+                string.Format("Streak: {0}", WonderToolsModule.Instance.StreakManager.StreakCount),
                 position: new Vector2(x, y),
                 justify: new Vector2(0f, 0f),
                 scale: Vector2.One * scale,
-                color: Color.White, 
-                stroke: 2f,
+                color: Color.LightGray,
+                stroke: 1f,
                 strokeColor: Color.Black);
         }
     }

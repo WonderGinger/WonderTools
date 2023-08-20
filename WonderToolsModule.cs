@@ -1,15 +1,9 @@
-﻿using Celeste.Mod.UI;
-using FMOD.Studio;
+﻿using Celeste.Mod.WonderTools.Integration;
+using Celeste.Mod.WonderTools.Streaks;
+using Celeste.Mod.WonderTools.TasRecording;
 using Microsoft.Xna.Framework;
 using Monocle;
-using Celeste;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using On.Celeste.Mod;
 
 namespace Celeste.Mod.WonderTools
 {
@@ -22,8 +16,11 @@ namespace Celeste.Mod.WonderTools
 
         public override Type SessionType => typeof(WonderToolsModuleSession);
         public static WonderToolsModuleSession Session => (WonderToolsModuleSession)Instance._Session;
+        public TasRecordingManager TasRecordingManager = new TasRecordingManager();
 
-        private const string REPLAY_ROOT = "WonderToolsRoot";
+        public const string REPLAY_ROOT = "WonderToolsRoot";
+
+        public StreakManager StreakManager { get; private set; } = new StreakManager();
 
         public WonderToolsModule()
         {
@@ -39,29 +36,45 @@ namespace Celeste.Mod.WonderTools
 
         private void Level_OnLoad(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
         {
-          Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("ifl {0}", isFromLoader));
+            TasRecordingManager.Level_OnLoad(level,playerIntro, isFromLoader);
+            return;
         }
 
         private void AddStreaks(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
         {
-            level.Add(new StreakCounterEntity(0));
+            level.Add(new Streaks.StreakCounterEntity());
         }
 
         public override void Load()
         {
-            // TODO: apply any hooks that should always be active
+            On.Monocle.Engine.Update += Engine_Update;
             Everest.Events.Level.OnLoadLevel += Level_OnLoad;
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "There is a hook now");
             Everest.Events.Level.OnLoadLevel += AddStreaks;
+            SpeedrunToolIntegration.Load();
         }
 
+        private void Engine_Update(On.Monocle.Engine.orig_Update orig, Engine self, GameTime gameTime)
+        {
+            orig(self, gameTime);
+            TasRecordingManager.OnUpdate();
+            if (Settings.KeyStreakIncrement.Pressed) StreakManager.StreakCount++;
+            if (Settings.KeyStreakReset.Pressed) StreakManager.StreakCount = 0;
+            if (Settings.KeyStreakToggle.Pressed) Settings.Streaks = !Settings.Streaks;
+        }
 
         public override void Unload()
         {
-            // TODO: unapply any hooks applied in Load()
+            On.Monocle.Engine.Update -= Engine_Update;
             Everest.Events.Level.OnLoadLevel -= Level_OnLoad;
             Everest.Events.Level.OnLoadLevel -= AddStreaks;
+            SpeedrunToolIntegration.Unload();
         }
+
+        public override void CreateModMenuSection(TextMenu menu, bool inGame, FMOD.Studio.EventInstance snapshot)
+		{
+			base.CreateModMenuSection(menu, inGame, snapshot);
+			//Settings.CreateOptions(menu, inGame, snapshot);
+		}
     }
 }
 

@@ -1,0 +1,10 @@
+﻿# ================================== Hotkeys Submenu ==================================
+WT_HOTKEYS=             Hotkeys
+WT_HOTKEYS_DESCRIPTION= Binding multiple keys to a control will cause those keys to act as a keycombo
+
+# ================================== Hotkey Config ==================================
+WT_KEY_START_RECORDING=            Start recording
+WT_KEY_END_RECORDING=			   End recording
+WT_KEY_STREAK_INCREMENT=           Increment streak
+WT_KEY_STREAK_RESET=               Reset streak
+WT_KEY_STREAK_TOGGLE=              Toggle streaks on/off
