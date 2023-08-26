@@ -4,6 +4,7 @@ using Celeste.Mod.WonderTools.TasRecording;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
+using System.IO;
 
 namespace Celeste.Mod.WonderTools
 {
@@ -18,7 +19,7 @@ namespace Celeste.Mod.WonderTools
         public static WonderToolsModuleSession Session => (WonderToolsModuleSession)Instance._Session;
         public TasRecordingManager TasRecordingManager = new TasRecordingManager();
 
-        public const string REPLAY_ROOT = "WonderToolsRoot";
+        public static readonly string REPLAY_ROOT = Path.Combine(Everest.PathGame, "WonderToolsRoot");
 
         public StreakManager StreakManager { get; private set; } = new StreakManager();
 
@@ -37,7 +38,6 @@ namespace Celeste.Mod.WonderTools
         private void Level_OnLoad(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
         {
             TasRecordingManager.Level_OnLoad(level,playerIntro, isFromLoader);
-            return;
         }
 
         private void AddStreaks(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
@@ -56,10 +56,11 @@ namespace Celeste.Mod.WonderTools
         private void Engine_Update(On.Monocle.Engine.orig_Update orig, Engine self, GameTime gameTime)
         {
             orig(self, gameTime);
+            if (!Settings.Enabled) return;
             TasRecordingManager.OnUpdate();
-            if (Settings.KeyStreakIncrement.Pressed) StreakManager.StreakCount++;
-            if (Settings.KeyStreakReset.Pressed) StreakManager.StreakCount = 0;
             if (Settings.KeyStreakToggle.Pressed) Settings.Streaks = !Settings.Streaks;
+            else if (Settings.KeyStreakIncrement.Pressed) StreakManager.StreakCount++;
+            else if (Settings.KeyStreakReset.Pressed) StreakManager.StreakCount = 0;
         }
 
         public override void Unload()
