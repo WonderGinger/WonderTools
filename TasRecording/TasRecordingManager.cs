@@ -19,6 +19,12 @@ namespace Celeste.Mod.WonderTools.TasRecording
         private bool _recording = false;
 
         private TasRecordingState _state;
+        public enum PrevJumpState {
+            JUMP_NOT_PRESSED = 0,
+            JUMP_K = 1,
+            JUMP_J = 2
+        };
+
 
         public TasRecordingManager()
         {
@@ -46,7 +52,12 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 if (level.Paused || DynamicData.For(level).Get<bool>("wasPaused"))
                 {
-                    Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "paused");
+//                    Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "paused");
+                    _state.Paused = true;
+                }
+                else
+                {
+                    _state.Paused = false;
                 }
             }
             _state.Update();
