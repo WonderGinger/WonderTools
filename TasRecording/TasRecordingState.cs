@@ -71,7 +71,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             PrevLine = Line;
 
             if (!Jump.Check) JumpState = PrevJumpState.JUMP_NOT_PRESSED;
-            else if (Jump.Pressed)
+            else if (Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold))
             {
                 if (JumpState == PrevJumpState.JUMP_J) JumpState = PrevJumpState.JUMP_K;
                 else JumpState = PrevJumpState.JUMP_J;
@@ -104,7 +104,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             if (AxisY.Value == -1 || MenuUp) ret += "U";
             if (AxisY.Value == 1 || MenuDown) ret += "D";
 
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("{0, -10} {1} {2} {3}", Engine.Scene.TimeActive,JumpState, Jump.Check, Jump.Pressed));
+            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("{0, -10} {1} {2} {3}", Engine.Scene.TimeActive,JumpState, Jump.Check, Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold)));
 
             foreach (TasRecordingButtonInput button in trbiList)
             {
@@ -116,7 +116,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 JumpState = PrevJumpState.JUMP_NOT_PRESSED;
             }
-            else if (Jump.Pressed)
+            else if (Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold))
             {
                 if (JumpState == PrevJumpState.JUMP_J)
                 {
@@ -131,7 +131,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             }
 /*            if (Jump.Check)
             {
-                if (Jump.Pressed)
+                if (Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold))
                 {
                     switch (_jumpState)
                     {
