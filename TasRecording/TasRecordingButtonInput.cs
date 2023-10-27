@@ -45,6 +45,11 @@ namespace Celeste.Mod.WonderTools.TasRecording
             }
             return ret;
         }
+        
+        public static void AppendTasInputChar(ref string inputLine, char inputChar)
+        {
+            inputLine += $",{inputChar}";
+        }
 
         public override string ToString()
         {
@@ -53,16 +58,24 @@ namespace Celeste.Mod.WonderTools.TasRecording
             var ret = "";
             if (_button == Input.Jump)
             {
-                if (TasRecordingState.JumpState == PrevJumpState.JUMP_J) ret += "J";
-                if (TasRecordingState.JumpState == PrevJumpState.JUMP_K) ret += "K";
+                AppendTasInputChar(ref ret, JumpStateCharacter(JumpState));
             }
-            else if (_button == Input.Dash) ret += "X";
-            else if (_button == Input.CrouchDash) ret += "Z";
-            else if (_button == Input.Grab) ret += "G";
-            else if (_button == Input.Pause) ret += "S";
-            else if (_button == Input.QuickRestart) ret += "Q";
-            else if (_button == Input.MenuJournal) ret += "N";
-            else if (_button == Input.MenuConfirm) ret += "O";
+            else if (_button == Input.Dash)
+            {
+                AppendTasInputChar(ref ret, DashStateCharacter(DashState));
+            }
+            else if (_button == Input.CrouchDash)
+            {
+                AppendTasInputChar(ref ret, CrouchDashStateChar(CrouchDashState));
+            }
+            else if (_button == Input.Grab) AppendTasInputChar(ref ret, 'G');
+            else if (_button == Input.Pause)
+            {
+                AppendTasInputChar(ref ret, PauseChar(PauseState));
+            }
+            else if (_button == Input.QuickRestart) AppendTasInputChar(ref ret, 'Q');
+            else if (_button == Input.MenuJournal) AppendTasInputChar(ref ret, 'N');
+            else if (_button == Input.MenuConfirm && Pressed) AppendTasInputChar(ref ret, 'O');
             return ret;
         }
     }

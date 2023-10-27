@@ -21,7 +21,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             MenuDown = Input.MenuDown;
             AxisX = Input.MoveX;
             AxisY = Input.MoveY;
-            Jump = Input.Jump;            
+            Jump = Input.Jump;
             Dash = Input.Dash;
             CrouchDash = Input.CrouchDash;
             Grab = Input.Grab;
@@ -51,9 +51,39 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public String Line;
         public String PrevLine;
         public bool Paused;
-        public static PrevJumpState JumpState;
-        private List<int> _jumpBindingIds;
+        public static PrevButtonInputState JumpState;
+        public static PrevButtonInputState DashState;
+        public static PrevButtonInputState CrouchDashState;
+        public static PrevButtonInputState PauseState;
         private List<TasRecordingButtonInput> trbiList;
+
+
+        public static char ButtonChar(PrevButtonInputState buttonState, char c1, char c2)
+        {
+            switch (buttonState)
+            {
+                case PrevButtonInputState.BUTTON_PRIMARY:
+                    return c1;
+                case PrevButtonInputState.BUTTON_SECONDARY:
+                    return c2;
+                default:
+                    throw new Exception("Unexpected button state");
+            }
+        }
+        public static char JumpStateCharacter(PrevButtonInputState buttonState) { return ButtonChar(buttonState, 'J', 'K'); }
+        public static char DashStateCharacter(PrevButtonInputState buttonState) { return ButtonChar(buttonState, 'C', 'X'); }
+        public static char CrouchDashStateChar(PrevButtonInputState buttonState) { return ButtonChar(buttonState, 'Z', 'V'); }
+        public static char PauseChar(PrevButtonInputState buttonState) { return ButtonChar(buttonState, 'S', 'Q'); }
+
+        public static void UpdateButtonState(VirtualButton button, ref PrevButtonInputState buttonState)
+        {
+            if (!button.Check) buttonState = PrevButtonInputState.BUTTON_NOT_PRESSED;
+            else if (button.Binding.Pressed(button.GamepadIndex, button.Threshold))
+            {
+                if (buttonState == PrevButtonInputState.BUTTON_PRIMARY) buttonState = PrevButtonInputState.BUTTON_SECONDARY;
+                else buttonState = PrevButtonInputState.BUTTON_PRIMARY;
+            }
+        }
 
         public void Update()
         {
@@ -70,12 +100,10 @@ namespace Celeste.Mod.WonderTools.TasRecording
             Talk = Input.Talk;
             PrevLine = Line;
 
-            if (!Jump.Check) JumpState = PrevJumpState.JUMP_NOT_PRESSED;
-            else if (Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold))
-            {
-                if (JumpState == PrevJumpState.JUMP_J) JumpState = PrevJumpState.JUMP_K;
-                else JumpState = PrevJumpState.JUMP_J;
-            }
+            UpdateButtonState(Jump, ref JumpState);
+            UpdateButtonState(Dash, ref DashState);
+            UpdateButtonState(CrouchDash, ref CrouchDashState);
+            UpdateButtonState(Pause, ref PauseState);
 
             trbiList = new List<TasRecordingButtonInput>
             {
@@ -99,85 +127,17 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 return ret;
             }
-            if (AxisX.Value == -1 || MenuLeft) ret += "L";
-            if (AxisX.Value == 1 || MenuRight) ret += "R";
-            if (AxisY.Value == -1 || MenuUp) ret += "U";
-            if (AxisY.Value == 1 || MenuDown) ret += "D";
+            if (AxisX.Value == -1 || MenuLeft) TasRecordingButtonInput.AppendTasInputChar(ref ret, 'L');
+            if (AxisX.Value == 1 || MenuRight) TasRecordingButtonInput.AppendTasInputChar(ref ret, 'R');
+            if (AxisY.Value == -1 || MenuUp) TasRecordingButtonInput.AppendTasInputChar(ref ret, 'U');
+            if (AxisY.Value == 1 || MenuDown) TasRecordingButtonInput.AppendTasInputChar(ref ret, 'D');
 
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("{0, -10} {1} {2} {3}", Engine.Scene.TimeActive,JumpState, Jump.Check, Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold)));
+            //Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("{0, -10} {1} {2} {3}", Engine.Scene.TimeActive,JumpState, Jump.Check, Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold)));
 
             foreach (TasRecordingButtonInput button in trbiList)
             {
                 ret += button.ToString();
             }
-            return ret;
-
-            if (!Jump.Check)
-            {
-                JumpState = PrevJumpState.JUMP_NOT_PRESSED;
-            }
-            else if (Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold))
-            {
-                if (JumpState == PrevJumpState.JUMP_J)
-                {
-                    ret += ",K";
-                    JumpState = PrevJumpState.JUMP_K;
-                }
-                else
-                {
-                    ret += ",J";
-                    JumpState = PrevJumpState.JUMP_J;
-                }
-            }
-/*            if (Jump.Check)
-            {
-                if (Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold))
-                {
-                    switch (_jumpState)
-                    {
-                        case PrevJumpState.JUMP_J:
-                            ret += ",K";
-                            _jumpState = PrevJumpState.JUMP_K;
-                            break;
-                        case PrevJumpState.JUMP_K:
-                            ret += ",J";
-                            _jumpState = PrevJumpState.JUMP_J;
-                            break;
-                        default:
-                            ret += ",J";
-                            _jumpState = PrevJumpState.JUMP_J;
-                            break;
-                    }
-                } // Jump.Pressed
-                else
-                {
-                    switch (_jumpState)
-                    {
-                        case PrevJumpState.JUMP_J:
-                            ret += ",J";
-                            break;
-                        case PrevJumpState.JUMP_K:
-                            ret += ",K";
-                            break;
-                        default:
-                            ret += ",J";
-                            _jumpState = PrevJumpState.JUMP_J;
-                            break;
-                    }
-                } // !Jump.Pressed
-            }  // Jump.Check
-            else
-            {
-                _jumpState = PrevJumpState.JUMP_NOT_PRESSED;
-            }*/
-
-            if (Dash.Check || Cancel.Check || Talk.Check) ret += ",X"; //this is a bug, need to check pressed and use similar to jump state
-            if (CrouchDash.Check) ret += ",Z";
-            if (Grab.Check) ret += ",G";
-            if (Pause.Check) ret += ",S";
-            if (Paused && Confirm.Check) ret += ",O";
-            if (Talk.Check) ret += ",N";
-            
             return ret;
         }
     }
