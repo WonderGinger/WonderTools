@@ -147,7 +147,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             if (Engine.Scene is Level level)
             {
                 // Credit: InputHistory mod
-                Paused = level.Paused;
+                Paused = level.Paused || DynamicData.For(level).Get<bool>("wasPaused");
             }
             Line = ToString();
         }
@@ -192,24 +192,24 @@ namespace Celeste.Mod.WonderTools.TasRecording
             }
             if (Paused)
             {
-                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"MenuDown {Input.MenuDown} MenuRight {Input.MenuRight} MenuLeft {Input.MenuLeft} MenuUp {Input.MenuUp} AxisX {AxisX.Value} AxisY {AxisY.Value}");
-                if (Input.MenuLeft) AppendTasInputStr(ref ret, "L");
-                if (Input.MenuRight) AppendTasInputStr(ref ret, "R");
-                if (Input.MenuUp) AppendTasInputStr(ref ret, "U");
-                if (Input.MenuDown) AppendTasInputStr(ref ret, "D");
+                //Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"MenuDown {(bool)Input.MenuDown} MenuRight {(bool)Input.MenuRight} MenuLeft {(bool)Input.MenuLeft} MenuUp {(bool)Input.MenuUp} AxisX {AxisX.Value} AxisY {AxisY.Value}");
+                if ((bool)Input.MenuLeft) AppendTasInputStr(ref ret, "L");
+                if ((bool)Input.MenuRight) AppendTasInputStr(ref ret, "R");
+                if ((bool)Input.MenuUp) AppendTasInputStr(ref ret, "U");
+                if ((bool)Input.MenuDown) AppendTasInputStr(ref ret, "D");
             }
             else
             {
-                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Move {{X:{AxisX.Value} Y:{AxisY.Value}}}\tAim {{X:{Aim.Value.X} Y:{Aim.Value.Y}}}\tFeather {{X:{Feather.Value.X} Y:{Feather.Value.Y}}}");
+                //Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Move {{X:{AxisX.Value} Y:{AxisY.Value}}}\tAim {{X:{Aim.Value.X} Y:{Aim.Value.Y}}}\tFeather {{X:{Feather.Value.X} Y:{Feather.Value.Y}}}");
                 DirectionalInputType up = GetInputType(AxisY.Value, AimY, FeatherY, -1);
                 DirectionalInputType left = GetInputType(AxisX.Value, AimX, FeatherX, -1);
                 DirectionalInputType right = GetInputType(AxisX.Value, AimX, FeatherX, 1);
                 DirectionalInputType down = GetInputType(AxisY.Value, AimY, FeatherY, 1);
 
-                AppendTasInputStr(ref ret, DirectionalInputTasString(up, "U"));
-                AppendTasInputStr(ref ret, DirectionalInputTasString(left, "L"));
-                AppendTasInputStr(ref ret, DirectionalInputTasString(right, "R"));
-                AppendTasInputStr(ref ret, DirectionalInputTasString(down, "D"));
+                ret += DirectionalInputTasString(up, "U");
+                ret += DirectionalInputTasString(left, "L");
+                ret += DirectionalInputTasString(right, "R");
+                ret += DirectionalInputTasString(down, "D");
 
             }
 

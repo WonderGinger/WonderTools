@@ -19,7 +19,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             _checkedBindingIds = CheckCount(button);
             Check = _checkedBindingIds.Count;
             Pressed = button.Binding.Pressed(button.GamepadIndex, button.Threshold);
-            CheckPaused();
+            //CheckPaused();
         }
 
         private void CheckPaused()
@@ -43,7 +43,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             _checkedBindingIds = CheckCount(_button);
             Check = _checkedBindingIds.Count;
             Pressed = _button.Binding.Pressed(_button.GamepadIndex, _button.Threshold);
-            CheckPaused();
+            //CheckPaused();
         }
         public static List<int> CheckCount(VirtualButton button)
         {
@@ -90,7 +90,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             }
             else if (_button == Input.QuickRestart) AppendTasInputStr(ref ret, "Q");
             else if (_button == Input.MenuJournal) AppendTasInputStr(ref ret, "N");
-            else if (MenuCheck) AppendTasInputStr(ref ret, "O");
+            else if (MenuCheck || _button == Input.MenuConfirm) AppendTasInputStr(ref ret, "O");
             return ret;
         }
     }
