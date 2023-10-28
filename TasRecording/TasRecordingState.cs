@@ -143,12 +143,6 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
             trbiList.ForEach(button => button.UpdateButtonState());
 
-            Paused = false;
-            if (Engine.Scene is Level level)
-            {
-                // Credit: InputHistory mod
-                Paused = level.Paused || DynamicData.For(level).Get<bool>("wasPaused");
-            }
             Line = ToString();
         }
         public static DirectionalInputType GetInputType(int move, int aim, int feather, int dir)

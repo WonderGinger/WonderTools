@@ -22,7 +22,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             //CheckPaused();
         }
 
-        private void CheckPaused()
+        private void GetMenuCheck()
         {
             if (Engine.Scene is Level level)
             {

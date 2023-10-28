@@ -66,6 +66,7 @@ namespace Celeste.Mod.WonderTools.Integration {
 			bool result = orig(stateManager, tas);
 
 			WonderToolsModule.Instance.StreakManager.OnSaveState();
+			WonderToolsModule.Instance.TasRecordingManager.OnSaveState();
 			Logger.Log(LogLevel.Debug, "WonderTools", "Save state hook");
 			return result;
 		}
@@ -73,13 +74,14 @@ namespace Celeste.Mod.WonderTools.Integration {
 		private static bool OnLoadState(Func<object, bool, bool> orig, object stateManager, bool tas) {
 			bool result = orig(stateManager, tas);
 
+			WonderToolsModule.Instance.TasRecordingManager.OnLoadState();
             Logger.Log(LogLevel.Debug, "WonderTools", "Load state hook");
 			return result;
 		}
 
 		private static void OnTeleportTo(Action<Session, bool> orig, Session session, bool fromHistory) {
-            Logger.Log(LogLevel.Debug, "WonderTools", "Teleport state hook");
 			orig(session, fromHistory);
+            Logger.Log(LogLevel.Debug, "WonderTools", "Teleport state hook");
 		}
 
 #pragma warning restore IDE0051  // Private method is unused
