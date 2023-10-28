@@ -19,29 +19,12 @@ namespace Celeste.Mod.WonderTools.TasRecording
         private bool _recording = false;
 
         private TasRecordingState _state;
-        public enum PrevJumpState {
-            JUMP_NOT_PRESSED = 0,
-            JUMP_K = 1,
-            JUMP_J = 2
-        };
-        public enum PrevDashState {
-            DASH_NOT_PRESSED = 0,
-            DASH_X = 1,
-            DASH_C = 2
-        };
-        public enum PrevCrouchDashState {
-            CROUCHDASH_NOT_PRESSED = 0,
-            CROUCHDASH_Z = 1,
-            CROUCHDASH_V = 2
-        };
-
         public enum PrevButtonInputState
         {
             BUTTON_NOT_PRESSED = 0,
             BUTTON_PRIMARY = 1,
             BUTTON_SECONDARY = 2
         }
-
         public TasRecordingManager()
         {
             Instance = this;
@@ -110,8 +93,12 @@ namespace Celeste.Mod.WonderTools.TasRecording
         {
             string prefixFrameCount = String.Format("{0, 4}", _state.framesSinceChange.ToString());
             string tasLine =  prefixFrameCount + _state.PrevLine;
- //           Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("{0}", tasLine));
             lines.Add(tasLine);
+        }
+
+        public static void AppendTasInputStr(ref string inputLine, string inputStr)
+        {
+            inputLine += $",{inputStr}";
         }
 
         public void SaveTasRecordingFile()

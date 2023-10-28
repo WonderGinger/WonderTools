@@ -1,43 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MonoMod.Utils;
 using Monocle;
 using static Celeste.Mod.WonderTools.TasRecording.TasRecordingManager;
+using System.Numerics;
 
 namespace Celeste.Mod.WonderTools.TasRecording
 {
     internal class TasRecordingState
     {
-        public TasRecordingState()
-        {
-            frameTotal = 0;
-            framesSinceChange = 0;
-            if (null == Input.MenuLeft) return;
-            MenuLeft = Input.MenuLeft;
-            MenuRight = Input.MenuRight;
-            MenuUp = Input.MenuUp;
-            MenuDown = Input.MenuDown;
-            AxisX = Input.MoveX;
-            AxisY = Input.MoveY;
-            Jump = Input.Jump;
-            Dash = Input.Dash;
-            CrouchDash = Input.CrouchDash;
-            Grab = Input.Grab;
-            Pause = Input.Pause;
-            Confirm = Input.MenuConfirm;
-            Cancel = Input.MenuCancel;
-            Talk = Input.Talk;
-            Line = this.ToString();
-        }
-
         public UInt32 frameTotal;
         public UInt32 framesSinceChange;
-        public bool MenuLeft;
-        public bool MenuRight;
-        public bool MenuUp;
-        public bool MenuDown;
+        public VirtualJoystick Aim;
+        public VirtualJoystick Feather;
         public VirtualIntegerAxis AxisX;
         public VirtualIntegerAxis AxisY;
         public VirtualButton Jump;
@@ -55,25 +30,68 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public static PrevButtonInputState DashState;
         public static PrevButtonInputState CrouchDashState;
         public static PrevButtonInputState PauseState;
-        private List<TasRecordingButtonInput> trbiList;
+        private readonly List<TasRecordingButtonInput> trbiList;
+
+        public int MoveX { get; set; }
+        public int MoveY { get; set; }
+        public int AimX { get; set; }
+        public int AimY { get; set; }
+        public int FeatherX { get; set; }
+        public int FeatherY { get; set; }
+        public enum DirectionalInputType {
+            NONE_e,
+            DASH_e,
+            MOVEMENT_e,
+            GAMEPLAY_e,
+        };
 
 
-        public static char ButtonChar(PrevButtonInputState buttonState, char c1, char c2)
+        public TasRecordingState()
         {
-            switch (buttonState)
+            frameTotal = 0;
+            framesSinceChange = 0;
+            if (null == Input.MenuLeft) return;
+
+            Aim = Input.Aim;
+            Feather = Input.Feather;
+            AxisX = Input.MoveX;
+            AxisY = Input.MoveY;
+            Jump = Input.Jump;
+            Dash = Input.Dash;
+            CrouchDash = Input.CrouchDash;
+            Grab = Input.Grab;
+            Pause = Input.Pause;
+            Confirm = Input.MenuConfirm;
+            Cancel = Input.MenuCancel;
+            Talk = Input.Talk;
+            trbiList = new List<TasRecordingButtonInput>
             {
-                case PrevButtonInputState.BUTTON_PRIMARY:
-                    return c1;
-                case PrevButtonInputState.BUTTON_SECONDARY:
-                    return c2;
-                default:
-                    throw new Exception("Unexpected button state");
-            }
+                new TasRecordingButtonInput(ref Jump),
+                new TasRecordingButtonInput(ref Dash),
+                new TasRecordingButtonInput(ref CrouchDash),
+                new TasRecordingButtonInput(ref Grab),
+                new TasRecordingButtonInput(ref Pause),
+                new TasRecordingButtonInput(ref Confirm),
+                new TasRecordingButtonInput(ref Cancel),
+                new TasRecordingButtonInput(ref Talk)
+            };
+            Line = ToString();
         }
-        public static char JumpStateCharacter(PrevButtonInputState buttonState) { return ButtonChar(buttonState, 'J', 'K'); }
-        public static char DashStateCharacter(PrevButtonInputState buttonState) { return ButtonChar(buttonState, 'C', 'X'); }
-        public static char CrouchDashStateChar(PrevButtonInputState buttonState) { return ButtonChar(buttonState, 'Z', 'V'); }
-        public static char PauseChar(PrevButtonInputState buttonState) { return ButtonChar(buttonState, 'S', 'Q'); }
+
+        public static string ButtonChar(PrevButtonInputState buttonState, string s1, string s2)
+        {
+            return buttonState switch
+            {
+                PrevButtonInputState.BUTTON_PRIMARY => s1,
+                PrevButtonInputState.BUTTON_SECONDARY => s2,
+                PrevButtonInputState.BUTTON_NOT_PRESSED => "",
+                _ => throw new Exception($"Unexpected button state {buttonState}"),
+            };
+        }
+        public static string JumpStateCharacter(PrevButtonInputState buttonState) { return ButtonChar(buttonState, "J", "K"); }
+        public static string DashStateCharacter(PrevButtonInputState buttonState) { return ButtonChar(buttonState, "C", "X"); }
+        public static string CrouchDashStateChar(PrevButtonInputState buttonState) { return ButtonChar(buttonState, "Z", "V"); }
+        public static string PauseChar(PrevButtonInputState buttonState) { return ButtonChar(buttonState, "S", "Q"); }
 
         public static void UpdateButtonState(VirtualButton button, ref PrevButtonInputState buttonState)
         {
@@ -85,19 +103,35 @@ namespace Celeste.Mod.WonderTools.TasRecording
             }
         }
 
+        private void UpdateAxisStates()
+        {
+
+            MoveX = AxisX.Value;
+            MoveY = AxisY.Value;
+
+            if (Math.Abs(Aim.Value.X) < Aim.Threshold)
+                AimX = 0;
+            else
+                AimX = (int)(Aim.Value.X / Math.Abs(Aim.Value.X));
+            if (Math.Abs(Aim.Value.Y) < Aim.Threshold)
+                AimY = 0;
+            else
+                AimY = (int)(Aim.Value.Y / Math.Abs(Aim.Value.Y));
+
+            if (Math.Abs(Feather.Value.X) < Feather.Threshold)
+                FeatherX = 0;
+            else
+                FeatherX = (int)(Feather.Value.X / Math.Abs(Feather.Value.X));
+            if (Math.Abs(Feather.Value.Y) < Feather.Threshold)
+                FeatherY = 0;
+            else
+                FeatherY = (int)(Feather.Value.Y / Math.Abs(Feather.Value.Y));
+        }
+
         public void Update()
         {
+
             frameTotal++;
-            AxisX = Input.MoveX;
-            AxisY = Input.MoveY;
-            Jump = Input.Jump;
-            Dash = Input.Dash;
-            CrouchDash = Input.CrouchDash;
-            Grab = Input.Grab;
-            Pause = Input.Pause;
-            Confirm = Input.MenuConfirm;
-            Cancel = Input.MenuCancel;
-            Talk = Input.Talk;
             PrevLine = Line;
 
             UpdateButtonState(Jump, ref JumpState);
@@ -105,19 +139,48 @@ namespace Celeste.Mod.WonderTools.TasRecording
             UpdateButtonState(CrouchDash, ref CrouchDashState);
             UpdateButtonState(Pause, ref PauseState);
 
-            trbiList = new List<TasRecordingButtonInput>
-            {
-                new TasRecordingButtonInput(Jump),
-                new TasRecordingButtonInput(Dash),
-                new TasRecordingButtonInput(CrouchDash),
-                new TasRecordingButtonInput(Grab),
-                new TasRecordingButtonInput(Pause),
-                new TasRecordingButtonInput(Confirm),
-                new TasRecordingButtonInput(Cancel),
-                new TasRecordingButtonInput(Talk)
-            };
+            UpdateAxisStates();
 
+            trbiList.ForEach(button => button.UpdateButtonState());
+
+            Paused = false;
+            if (Engine.Scene is Level level)
+            {
+                // Credit: InputHistory mod
+                Paused = level.Paused;
+            }
             Line = ToString();
+        }
+        public static DirectionalInputType GetInputType(int move, int aim, int feather, int dir)
+        {
+            if ((3 * dir) == (move + aim + feather)) return DirectionalInputType.GAMEPLAY_e;
+            if ((2 * dir) == (move + feather)) return DirectionalInputType.MOVEMENT_e;
+            if (dir == aim) return DirectionalInputType.DASH_e;
+
+            return DirectionalInputType.NONE_e;
+        }
+
+        public static string DirectionalInputTasString(DirectionalInputType inputType, string cardinal)
+        {
+            switch (inputType)
+            {
+                case DirectionalInputType.GAMEPLAY_e:
+                {
+                    return $",{cardinal}";
+                }
+                case DirectionalInputType.DASH_e:
+                {
+                    return $",A{cardinal}";
+                }
+                case DirectionalInputType.MOVEMENT_e:
+                {
+                    return $",M{cardinal}";
+                }
+                default:
+                {
+                    return "";
+                }
+            };
         }
 
         public override string ToString()
@@ -127,17 +190,35 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 return ret;
             }
-            if (AxisX.Value == -1 || MenuLeft) TasRecordingButtonInput.AppendTasInputChar(ref ret, 'L');
-            if (AxisX.Value == 1 || MenuRight) TasRecordingButtonInput.AppendTasInputChar(ref ret, 'R');
-            if (AxisY.Value == -1 || MenuUp) TasRecordingButtonInput.AppendTasInputChar(ref ret, 'U');
-            if (AxisY.Value == 1 || MenuDown) TasRecordingButtonInput.AppendTasInputChar(ref ret, 'D');
+            if (Paused)
+            {
+                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"MenuDown {Input.MenuDown} MenuRight {Input.MenuRight} MenuLeft {Input.MenuLeft} MenuUp {Input.MenuUp} AxisX {AxisX.Value} AxisY {AxisY.Value}");
+                if (Input.MenuLeft) AppendTasInputStr(ref ret, "L");
+                if (Input.MenuRight) AppendTasInputStr(ref ret, "R");
+                if (Input.MenuUp) AppendTasInputStr(ref ret, "U");
+                if (Input.MenuDown) AppendTasInputStr(ref ret, "D");
+            }
+            else
+            {
+                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Move {{X:{AxisX.Value} Y:{AxisY.Value}}}\tAim {{X:{Aim.Value.X} Y:{Aim.Value.Y}}}\tFeather {{X:{Feather.Value.X} Y:{Feather.Value.Y}}}");
+                DirectionalInputType up = GetInputType(AxisY.Value, AimY, FeatherY, -1);
+                DirectionalInputType left = GetInputType(AxisX.Value, AimX, FeatherX, -1);
+                DirectionalInputType right = GetInputType(AxisX.Value, AimX, FeatherX, 1);
+                DirectionalInputType down = GetInputType(AxisY.Value, AimY, FeatherY, 1);
+
+                AppendTasInputStr(ref ret, DirectionalInputTasString(up, "U"));
+                AppendTasInputStr(ref ret, DirectionalInputTasString(left, "L"));
+                AppendTasInputStr(ref ret, DirectionalInputTasString(right, "R"));
+                AppendTasInputStr(ref ret, DirectionalInputTasString(down, "D"));
+
+            }
 
             //Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("{0, -10} {1} {2} {3}", Engine.Scene.TimeActive,JumpState, Jump.Check, Jump.Binding.Pressed(Jump.GamepadIndex, Jump.Threshold)));
+            //Logger.Log(LogLevel.Info, nameof(WonderToolsModule), string.Format("{0, -10}\n\tMove {{X:{1} Y:{2}}} \n\tDash {3}", Engine.Scene.TimeActive, Input.MoveX.Value, Input.MoveY.Value, Input.Aim.Value));
 
-            foreach (TasRecordingButtonInput button in trbiList)
-            {
-                ret += button.ToString();
-            }
+            //Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"MenuDown {MenuDown} MenuRight {MenuRight} MenuLeft {MenuLeft} MenuUp {MenuUp} AxisX {AxisX.Value} AxisY {AxisY.Value}");
+
+            trbiList.ForEach(button => ret += button.ToString());
             return ret;
         }
     }

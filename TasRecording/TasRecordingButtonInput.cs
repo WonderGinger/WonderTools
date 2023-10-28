@@ -1,29 +1,49 @@
 ﻿using Monocle;
 using MonoMod.Utils;
-using Microsoft.Xna.Framework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Celeste.Mod.WonderTools.TasRecording.TasRecordingState;
 using static Celeste.Mod.WonderTools.TasRecording.TasRecordingManager;
+using static Celeste.Mod.WonderTools.TasRecording.TasRecordingState;
 
 namespace Celeste.Mod.WonderTools.TasRecording
 {
     public class TasRecordingButtonInput
     {
-        public int Check { get; }
-        public bool Pressed { get; }
-        public bool MenuCheck { get; }
-        private readonly VirtualButton _button;
-        private readonly List<int> _checkedBindingIds;
-        public TasRecordingButtonInput(VirtualButton button)
+        private int Check { get; set; }
+        private bool Pressed { get; set;  }
+        public bool MenuCheck { get; set;  } = false;
+        private VirtualButton _button;
+        private List<int> _checkedBindingIds;
+        public TasRecordingButtonInput(ref VirtualButton button)
         {
             _button = button;
             _checkedBindingIds = CheckCount(button);
             Check = _checkedBindingIds.Count;
             Pressed = button.Binding.Pressed(button.GamepadIndex, button.Threshold);
+            CheckPaused();
+        }
+
+        private void CheckPaused()
+        {
+            if (Engine.Scene is Level level)
+            {
+                // Credit: InputHistory mod
+                // The frame you hit a button to close the pause menu, level.Pause becomes false,
+                // so check wasPaused instead, as that stays true for one extra frame.
+                if (level.Paused || DynamicData.For(level).Get<bool>("wasPaused"))
+                {
+                    // Various menu button hacks
+                    if (_button == Input.Jump) MenuCheck = Input.MenuConfirm.Check;
+                    if (_button == Input.Dash) MenuCheck = Input.MenuCancel.Check;
+                }
+            }
+        }
+
+        public void UpdateButtonState()
+        {
+            _checkedBindingIds = CheckCount(_button);
+            Check = _checkedBindingIds.Count;
+            Pressed = _button.Binding.Pressed(_button.GamepadIndex, _button.Threshold);
+            CheckPaused();
         }
         public static List<int> CheckCount(VirtualButton button)
         {
@@ -45,37 +65,32 @@ namespace Celeste.Mod.WonderTools.TasRecording
             }
             return ret;
         }
-        
-        public static void AppendTasInputChar(ref string inputLine, char inputChar)
-        {
-            inputLine += $",{inputChar}";
-        }
 
         public override string ToString()
         {
-            if (Check == 0) return "";
+            if (Check == 0 && !MenuCheck) return "";
 
             var ret = "";
             if (_button == Input.Jump)
             {
-                AppendTasInputChar(ref ret, JumpStateCharacter(JumpState));
+                AppendTasInputStr(ref ret, JumpStateCharacter(JumpState));
             }
             else if (_button == Input.Dash)
             {
-                AppendTasInputChar(ref ret, DashStateCharacter(DashState));
+                AppendTasInputStr(ref ret, DashStateCharacter(DashState));
             }
+            else if (_button == Input.Grab) AppendTasInputStr(ref ret, "G");
             else if (_button == Input.CrouchDash)
             {
-                AppendTasInputChar(ref ret, CrouchDashStateChar(CrouchDashState));
+                AppendTasInputStr(ref ret, CrouchDashStateChar(CrouchDashState));
             }
-            else if (_button == Input.Grab) AppendTasInputChar(ref ret, 'G');
             else if (_button == Input.Pause)
             {
-                AppendTasInputChar(ref ret, PauseChar(PauseState));
+                AppendTasInputStr(ref ret, PauseChar(PauseState));
             }
-            else if (_button == Input.QuickRestart) AppendTasInputChar(ref ret, 'Q');
-            else if (_button == Input.MenuJournal) AppendTasInputChar(ref ret, 'N');
-            else if (_button == Input.MenuConfirm && Pressed) AppendTasInputChar(ref ret, 'O');
+            else if (_button == Input.QuickRestart) AppendTasInputStr(ref ret, "Q");
+            else if (_button == Input.MenuJournal) AppendTasInputStr(ref ret, "N");
+            else if (MenuCheck) AppendTasInputStr(ref ret, "O");
             return ret;
         }
     }
