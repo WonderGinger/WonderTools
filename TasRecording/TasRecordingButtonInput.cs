@@ -14,6 +14,8 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public int bufferFrames = 0;
         private VirtualButton _button;
         private List<int> _checkedBindingIds;
+        const int MAX_BUFFER_PAUSE_FRAMES = 5;
+        const int MAX_BUFFER_INPUT_FRAMES = 4;
         private string primary;
         private string secondary;
         public TasRecordingButtonInput(ref VirtualButton button, string primary = "", string secondary = "")
@@ -76,21 +78,18 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public string CrouchDashStateChar(ButtonInputState buttonState) { return ButtonChar(buttonState, primary, secondary); }
         public string PauseChar(ButtonInputState buttonState) {
             /* Check is implied */
-            if (LevelPaused && Pressed && bufferFrames <= 5)
+            if (LevelPaused && Pressed && bufferFrames <= MAX_BUFFER_PAUSE_FRAMES)
             {
-                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"pause paused secondary");
                 buttonState = ButtonInputState.BUTTON_SECONDARY;
                 bufferFrames = 0;
             }
             else if (Pressed)
             {
-                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"pause pressed {bufferFrames} {PausedPrev} {Paused}");
                 bufferFrames = 0;
                 buttonState = ButtonInputState.BUTTON_PRIMARY;
             }
-            if (bufferFrames > 5)
+            if (bufferFrames > MAX_BUFFER_PAUSE_FRAMES)
             {
-                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"pause held {bufferFrames}");
                 buttonState = ButtonInputState.BUTTON_NOT_PRESSED;
                 return "";
             }
@@ -131,7 +130,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             else if (_button == Input.Talk)
             {
                 if (Pressed) bufferFrames = 0;
-                if (bufferFrames < 5)
+                if (bufferFrames < MAX_BUFFER_INPUT_FRAMES)
                 { 
                     AppendTasInputStr(ref ret, "N");
                 }

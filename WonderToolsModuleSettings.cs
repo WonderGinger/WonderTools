@@ -35,6 +35,14 @@ namespace Celeste.Mod.WonderTools
         [DefaultButtonBinding(0, Keys.F8)]
         public ButtonBinding KeyStopRecording { get; set; } = new(0, Keys.F8);
 
+        [SettingName("WT_KEY_SAVE_BUFFER_ROOM")]
+        [DefaultButtonBinding(0, Keys.F8)]
+        public ButtonBinding KeyBufferSaveRoomRecording { get; set; } = new(0, Keys.F9);
+
+        [SettingName("WT_KEY_SAVE_BUFFER_STATE")]
+        [DefaultButtonBinding(0, Keys.F8)]
+        public ButtonBinding KeyBufferSaveStateRecording { get; set; } = new(0, Keys.F10);
+
         [SettingName("WT_KEY_STREAK_INCREMENT")]
         [DefaultButtonBinding(0, Keys.OemPlus)]
         public ButtonBinding KeyStreakIncrement { get; set; } = new(0, Keys.OemPlus);

@@ -67,7 +67,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         public void ClearTasRecordingFile(string filename)
         {
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), String.Format("Clearing recording file {0}", this));
+            Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"Clearing {filename}");
             File.WriteAllText(filename, string.Empty);
             lines.Clear();
         }

@@ -20,6 +20,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
         private readonly TasRecordingFile room;
         private readonly TasRecordingFile attempt;
         private readonly TasRecordingFile playback;
+        private readonly TasRecordingFile flex;
         private readonly List<TasRecordingFile> tasRecordingFiles;
         private bool _recording = false;
         public static bool Paused { get; set; }
@@ -48,25 +49,27 @@ namespace Celeste.Mod.WonderTools.TasRecording
             playback = new TasRecordingFile("playback");
             room = new TasRecordingFile("room");
             attempt = new TasRecordingFile("attempt");
+            tasRecordingFiles.Add(room);
+            tasRecordingFiles.Add(attempt);
         }
         public void OnUpdate()
         {
             if (WonderToolsModule.Settings.KeyStartRecording.Pressed)
             {
-                string name = "Test1";
+                string name = "flex";
                 InitTasRecordingOptions options = default;
                 if (!_recording)
                 {
                     //options.fileClear = true;
                     options.fileContinue = true;
-                    Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "Enabling recording");
+                    Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), "Enabling recording");
                 }
                 else
                 {
                     options.fileRestart = true;
-                    Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "Restarting recording");
+                    Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), "Restarting recording");
                 }
-                InitTasRecordingFile(name, options);
+                flex.InitTasRecordingFile(name, options);
                 _state = new TasRecordingState();
                 _recording = true;
             }
@@ -87,7 +90,6 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 WasPaused = DynamicData.For(level).Get<bool>("wasPaused");
                 if (level.Paused || DynamicData.For(level).Get<bool>("wasPaused"))
                 {
-                    //Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"paused = {level.Paused} {DynamicData.For(level).Get<bool>("wasPaused")}");
                     Paused = true;
                 }
             }
