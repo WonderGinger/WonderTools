@@ -47,6 +47,7 @@ namespace Celeste.Mod.WonderTools.Integration {
 				IsSpeedrunToolInstalled = true;
 			}
 			catch (Exception e) {
+                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"{e} {IsSpeedrunToolInstalled}");
 				IsSpeedrunToolInstalled = false;
 			}
 		}

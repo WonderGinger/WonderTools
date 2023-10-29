@@ -17,10 +17,19 @@ namespace Celeste.Mod.WonderTools.TasRecording
         private List<String> lines = new List<String>();
         private StreamWriter recentRoomWriter;
         private StreamWriter _tasRecordingWriter;
+        private readonly TasRecordingFile room;
+        private readonly TasRecordingFile attempt;
+        private readonly TasRecordingFile playback;
+        private readonly List<TasRecordingFile> tasRecordingFiles;
         private bool _recording = false;
+        public static bool Paused { get; set; }
+        public static bool PausedPrev { get; set; }
+        public static bool LevelPaused { get; set; }
+        public static bool LevelPausedPrev { get; set; }
+        public static bool WasPaused { get; set; }
 
         private TasRecordingState _state;
-        public enum PrevButtonInputState
+        public enum ButtonInputState
         {
             BUTTON_NOT_PRESSED = 0,
             BUTTON_PRIMARY = 1,
@@ -36,6 +45,9 @@ namespace Celeste.Mod.WonderTools.TasRecording
         {
             Instance = this;
             _state = new TasRecordingState();
+            playback = new TasRecordingFile("playback");
+            room = new TasRecordingFile("room");
+            attempt = new TasRecordingFile("attempt");
         }
         public void OnUpdate()
         {
@@ -68,11 +80,15 @@ namespace Celeste.Mod.WonderTools.TasRecording
             
             if (Engine.Scene is Level level)
             {
-                _state.Paused = false;
+                PausedPrev = Paused;
+                Paused = false;
+                LevelPausedPrev = LevelPaused;
+                LevelPaused = level.Paused;
+                WasPaused = DynamicData.For(level).Get<bool>("wasPaused");
                 if (level.Paused || DynamicData.For(level).Get<bool>("wasPaused"))
                 {
-//                    Logger.Log(LogLevel.Info, nameof(WonderToolsModule), "paused");
-                    _state.Paused = true;
+                    //Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"paused = {level.Paused} {DynamicData.For(level).Get<bool>("wasPaused")}");
+                    Paused = true;
                 }
             }
             _state.Update();
@@ -135,6 +151,10 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         public static void AppendTasInputStr(ref string inputLine, string inputStr)
         {
+            if (inputStr.Equals(""))
+            {
+                return;
+            }
             inputLine += $",{inputStr}";
         }
 

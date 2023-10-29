@@ -11,14 +11,19 @@ namespace Celeste.Mod.WonderTools.TasRecording
         private int Check { get; set; }
         private bool Pressed { get; set;  }
         public bool MenuCheck { get; set;  } = false;
+        public int bufferFrames = 0;
         private VirtualButton _button;
         private List<int> _checkedBindingIds;
-        public TasRecordingButtonInput(ref VirtualButton button)
+        private string primary;
+        private string secondary;
+        public TasRecordingButtonInput(ref VirtualButton button, string primary = "", string secondary = "")
         {
             _button = button;
             _checkedBindingIds = CheckCount(button);
             Check = _checkedBindingIds.Count;
             Pressed = button.Binding.Pressed(button.GamepadIndex, button.Threshold);
+            this.primary = primary;
+            this.secondary = secondary;
             //CheckPaused();
         }
 
@@ -43,7 +48,8 @@ namespace Celeste.Mod.WonderTools.TasRecording
             _checkedBindingIds = CheckCount(_button);
             Check = _checkedBindingIds.Count;
             Pressed = _button.Binding.Pressed(_button.GamepadIndex, _button.Threshold);
-            //CheckPaused();
+            bufferFrames++;
+            //GetMenuCheck();
         }
         public static List<int> CheckCount(VirtualButton button)
         {
@@ -64,6 +70,32 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 idx++;
             }
             return ret;
+        }
+        public string JumpStateCharacter(ButtonInputState buttonState) { return ButtonChar(buttonState, primary, secondary); }
+        public string DashStateCharacter(ButtonInputState buttonState) { return ButtonChar(buttonState, primary, secondary); }
+        public string CrouchDashStateChar(ButtonInputState buttonState) { return ButtonChar(buttonState, primary, secondary); }
+        public string PauseChar(ButtonInputState buttonState) {
+            /* Check is implied */
+            if (LevelPaused && Pressed && bufferFrames <= 5)
+            {
+                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"pause paused secondary");
+                buttonState = ButtonInputState.BUTTON_SECONDARY;
+                bufferFrames = 0;
+            }
+            else if (Pressed)
+            {
+                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"pause pressed {bufferFrames} {PausedPrev} {Paused}");
+                bufferFrames = 0;
+                buttonState = ButtonInputState.BUTTON_PRIMARY;
+            }
+            if (bufferFrames > 5)
+            {
+                Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"pause held {bufferFrames}");
+                buttonState = ButtonInputState.BUTTON_NOT_PRESSED;
+                return "";
+            }
+            else { buttonState= ButtonInputState.BUTTON_PRIMARY; }
+            return ButtonChar(buttonState, primary, secondary); 
         }
 
         public override string ToString()
@@ -88,9 +120,22 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 AppendTasInputStr(ref ret, PauseChar(PauseState));
             }
+            else if (MenuCheck || (Pressed && _button == Input.MenuConfirm)) AppendTasInputStr(ref ret, "O");
+            else if (LevelPaused && _button == Input.MenuCancel)
+            {
+                AppendTasInputStr(ref ret, "C");
+                DashState = ButtonInputState.BUTTON_SECONDARY;
+            }
             else if (_button == Input.QuickRestart) AppendTasInputStr(ref ret, "Q");
             else if (_button == Input.MenuJournal) AppendTasInputStr(ref ret, "N");
-            else if (MenuCheck || _button == Input.MenuConfirm) AppendTasInputStr(ref ret, "O");
+            else if (_button == Input.Talk)
+            {
+                if (Pressed) bufferFrames = 0;
+                if (bufferFrames < 5)
+                { 
+                    AppendTasInputStr(ref ret, "N");
+                }
+            }
             return ret;
         }
     }
