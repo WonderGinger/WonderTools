@@ -4,13 +4,14 @@ using MonoMod.Utils;
 using Monocle;
 using static Celeste.Mod.WonderTools.TasRecording.TasRecordingManager;
 using System.Numerics;
+using Microsoft.VisualBasic.FileIO;
 
 namespace Celeste.Mod.WonderTools.TasRecording
 {
-    internal class TasRecordingState
+    public class TasRecordingState
     {
         public UInt32 frameTotal;
-        public UInt32 framesSinceChange;
+        public UInt32 framesSinceChange { get; set; }
         public VirtualJoystick Aim;
         public VirtualJoystick Feather;
         public VirtualIntegerAxis AxisX;
@@ -25,10 +26,10 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public VirtualButton Talk;
         public String Line;
         public String PrevLine;
-        public static ButtonInputState JumpState;
-        public static ButtonInputState DashState;
-        public static ButtonInputState CrouchDashState;
-        public static ButtonInputState PauseState;
+        public static ButtonInputState JumpState = ButtonInputState.BUTTON_NOT_PRESSED;
+        public static ButtonInputState DashState = ButtonInputState.BUTTON_NOT_PRESSED;
+        public static ButtonInputState CrouchDashState = ButtonInputState.BUTTON_NOT_PRESSED; 
+        public static ButtonInputState PauseState = ButtonInputState.BUTTON_NOT_PRESSED;
         private readonly List<TasRecordingButtonInput> trbiList;
 
         public int MoveX { get; set; }
@@ -47,9 +48,16 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         public TasRecordingState()
         {
+            Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"TasRecordingState init");
+
             frameTotal = 0;
             framesSinceChange = 0;
-            if (null == Input.MenuLeft) return;
+
+            /* hack to see if inputs are possible */
+            if (null == Input.MenuLeft)
+            {
+                throw new Exception("Failed to init TasRecordingState");
+            }
 
             Aim = Input.Aim;
             Feather = Input.Feather;
@@ -75,6 +83,12 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 new TasRecordingButtonInput(ref Talk, "N", "X")
             };
             Line = ToString();
+        }
+
+        public bool Changed()
+        {
+            //Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), string.Format("{0} \n{1}\n{2}", framesSinceChange, PrevLine, Line));
+            return (!Line.Equals(PrevLine));
         }
 
         public static string ButtonChar(ButtonInputState buttonState, string s1, string s2)
@@ -128,6 +142,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public void Update()
         {
             frameTotal++;
+            framesSinceChange++;
             PrevLine = Line;
 
             /* Update state for buttons that could have multiple tas encodings */
@@ -140,8 +155,6 @@ namespace Celeste.Mod.WonderTools.TasRecording
             trbiList.ForEach(button => button.UpdateButtonState());
 
             Line = ToString();
-
-            //PausedPrev = Paused;
         }
         public static DirectionalInputType GetInputType(int move, int aim, int feather, int dir)
         {
@@ -182,9 +195,9 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 return ret;
             }
-            if (LevelPaused)
+            if (LevelWasPaused)
             {
-                //Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"MenuDown {(bool)Input.MenuDown} MenuRight {(bool)Input.MenuRight} MenuLeft {(bool)Input.MenuLeft} MenuUp {(bool)Input.MenuUp} AxisX {AxisX.Value} AxisY {AxisY.Value}");
+                Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"MenuDown {(bool)Input.MenuDown} MenuRight {(bool)Input.MenuRight} MenuLeft {(bool)Input.MenuLeft} MenuUp {(bool)Input.MenuUp} AxisX {AxisX.Value} AxisY {AxisY.Value}");
                 if ((bool)Input.MenuLeft) AppendTasInputStr(ref ret, "L");
                 if ((bool)Input.MenuRight) AppendTasInputStr(ref ret, "R");
                 if ((bool)Input.MenuUp) AppendTasInputStr(ref ret, "U");

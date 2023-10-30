@@ -17,15 +17,16 @@ namespace Celeste.Mod.WonderTools
 
         public override Type SessionType => typeof(WonderToolsModuleSession);
         public static WonderToolsModuleSession Session => (WonderToolsModuleSession)Instance._Session;
-        public TasRecordingManager TasRecordingManager = new TasRecordingManager();
+        public TasRecordingManager TasRecordingManager;
 
         public static readonly string REPLAY_ROOT = Path.Combine(Everest.PathGame, "WonderToolsRoot");
 
-        public StreakManager StreakManager { get; private set; } = new StreakManager();
+        public StreakManager StreakManager = new();
 
         public WonderToolsModule()
         {
             Instance = this;
+            TasRecordingManager= new TasRecordingManager();
 #if DEBUG
             // debug builds use verbose logging
             Logger.SetLogLevel(nameof(WonderToolsModule), LogLevel.Verbose);
@@ -76,6 +77,10 @@ namespace Celeste.Mod.WonderTools
 			base.CreateModMenuSection(menu, inGame, snapshot);
 			//Settings.CreateOptions(menu, inGame, snapshot);
 		}
+        public static void WonderLog(string s)
+        {
+            Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), s);
+        }
     }
 }
 

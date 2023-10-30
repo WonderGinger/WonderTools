@@ -8,3 +8,6 @@ WT_KEY_END_RECORDING=			   End recording
 WT_KEY_STREAK_INCREMENT=           Increment streak
 WT_KEY_STREAK_RESET=               Reset streak
 WT_KEY_STREAK_TOGGLE=              Toggle streaks on/off
+WT_KEY_SAVE_BUFFER_ROOM=		   Save previous room
+WT_KEY_SAVE_BUFFER_ATTEMPT=		   Save previous attempt (since load state)
+WT_KEY_SAVE_BUFFER_STATE=		   Tas file version of your save state

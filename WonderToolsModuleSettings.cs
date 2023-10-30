@@ -21,6 +21,7 @@ namespace Celeste.Mod.WonderTools
 
         #region Settings
         public bool Enabled { get; set; } = true;
+        public bool ReplayBuffer { get; set; } = true;
         public bool Streaks { get; set; } = false;
 
         #endregion
@@ -36,12 +37,16 @@ namespace Celeste.Mod.WonderTools
         public ButtonBinding KeyStopRecording { get; set; } = new(0, Keys.F8);
 
         [SettingName("WT_KEY_SAVE_BUFFER_ROOM")]
-        [DefaultButtonBinding(0, Keys.F8)]
+        [DefaultButtonBinding(0, Keys.F9)]
         public ButtonBinding KeyBufferSaveRoomRecording { get; set; } = new(0, Keys.F9);
 
+        [SettingName("WT_KEY_SAVE_BUFFER_ATTEMPT")]
+        [DefaultButtonBinding(0, Keys.F10)]
+        public ButtonBinding KeyBufferSaveAttemptRecording { get; set; } = new(0, Keys.F10);
+
         [SettingName("WT_KEY_SAVE_BUFFER_STATE")]
-        [DefaultButtonBinding(0, Keys.F8)]
-        public ButtonBinding KeyBufferSaveStateRecording { get; set; } = new(0, Keys.F10);
+        [DefaultButtonBinding(0, Keys.F11)]
+        public ButtonBinding KeyBufferSaveStateRecording { get; set; } = new(0, Keys.F11);
 
         [SettingName("WT_KEY_STREAK_INCREMENT")]
         [DefaultButtonBinding(0, Keys.OemPlus)]

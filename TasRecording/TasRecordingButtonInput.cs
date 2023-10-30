@@ -88,12 +88,11 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 bufferFrames = 0;
                 buttonState = ButtonInputState.BUTTON_PRIMARY;
             }
-            if (bufferFrames > MAX_BUFFER_PAUSE_FRAMES)
+            else if (bufferFrames > MAX_BUFFER_PAUSE_FRAMES)
             {
                 buttonState = ButtonInputState.BUTTON_NOT_PRESSED;
-                return "";
             }
-            else { buttonState= ButtonInputState.BUTTON_PRIMARY; }
+            else { buttonState = ButtonInputState.BUTTON_PRIMARY; }
             return ButtonChar(buttonState, primary, secondary); 
         }
 
