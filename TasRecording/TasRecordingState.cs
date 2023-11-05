@@ -23,6 +23,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public VirtualButton Pause;
         public VirtualButton Confirm;
         public VirtualButton Cancel;
+        public VirtualButton Journal;
         public VirtualButton Talk;
         public String Line;
         public String PrevLine;
@@ -70,6 +71,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             Pause = Input.Pause;
             Confirm = Input.MenuConfirm;
             Cancel = Input.MenuCancel;
+            Journal = Input.MenuJournal;
             Talk = Input.Talk;
             trbiList = new List<TasRecordingButtonInput>
             {
@@ -80,9 +82,15 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 new TasRecordingButtonInput(ref Pause, "S", "C"),
                 new TasRecordingButtonInput(ref Confirm, "O", "J"),
                 new TasRecordingButtonInput(ref Cancel, "C", "X"),
+                new TasRecordingButtonInput(ref Journal, "N", "X"),
                 new TasRecordingButtonInput(ref Talk, "N", "X")
             };
             Line = ToString();
+        }
+
+        public TasRecordingState ShallowClone()
+        {
+            return (TasRecordingState)this.MemberwiseClone();
         }
 
         public bool Changed()
@@ -197,7 +205,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             }
             if (LevelWasPaused)
             {
-                Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"MenuDown {(bool)Input.MenuDown} MenuRight {(bool)Input.MenuRight} MenuLeft {(bool)Input.MenuLeft} MenuUp {(bool)Input.MenuUp} AxisX {AxisX.Value} AxisY {AxisY.Value}");
+                //=Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"MenuDown {(bool)Input.MenuDown} MenuRight {(bool)Input.MenuRight} MenuLeft {(bool)Input.MenuLeft} MenuUp {(bool)Input.MenuUp} AxisX {AxisX.Value} AxisY {AxisY.Value}");
                 if ((bool)Input.MenuLeft) AppendTasInputStr(ref ret, "L");
                 if ((bool)Input.MenuRight) AppendTasInputStr(ref ret, "R");
                 if ((bool)Input.MenuUp) AppendTasInputStr(ref ret, "U");
