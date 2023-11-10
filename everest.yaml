@@ -5,4 +5,6 @@
     - Name: EverestCore
       Version: 1.4054.0
     - Name: SpeedrunTool
-      Version: 3.20.14
+      Version: 3.1
+    - Name: CelesteTAS
+      Version: 3.36.5

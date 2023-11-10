@@ -1,6 +1,14 @@
-﻿using MonoMod.RuntimeDetour;
+﻿using MonoMod.ModInterop;
+using MonoMod.RuntimeDetour;
 using System;
 using System.Reflection;
+using MonoMod.Utils;
+
+[ModImportName("SpeedrunTool.SaveLoad")]
+public static class SpeedrunToolImports 
+{
+	public static Func<object> RegisterSaveLoadAction;
+}
 
 namespace Celeste.Mod.WonderTools.Integration {
 	public static class SpeedrunToolIntegration {
@@ -19,12 +27,23 @@ namespace Celeste.Mod.WonderTools.Integration {
 
 		internal static void Load() {
 			try {
+				typeof(SpeedrunToolImports).ModInterop();
+				// Get type info and functions
+				EverestModuleMetadata SpeedrunToolMeta = new()
+				{
+					Name = "SpeedrunTool",
+					Version = new Version(3, 1)
+				};
+				bool SpeedrunToolLoaded = Everest.Loader.DependencyLoaded(SpeedrunToolMeta);
+				WonderToolsModule.WonderLog($"SRT loaded {SpeedrunToolLoaded}");
 				// Get type info and functions
 				StateManager = Type.GetType("Celeste.Mod.SpeedrunTool.SaveLoad.StateManager,SpeedrunTool");
 				if (StateManager == null) {
 					IsSpeedrunToolInstalled = false;
 					return;
 				}
+
+				WonderToolsModule.WonderLog($"LOADED SRT {StateManager}");
 				StateManager_SaveState = StateManager.GetMethod(
 					"SaveState", BindingFlags.NonPublic | BindingFlags.Instance,
 					Type.DefaultBinder, new Type[] { typeof(bool) }, null);

@@ -1,14 +1,23 @@
-﻿using FMOD;
+﻿using Celeste.Pico8;
+using FMOD;
+using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
+using Celeste;
+using Celeste.Mod;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static Celeste.Mod.WonderTools.WonderToolsModule;
+using Celeste.Mod.WonderTools.Integration;
 
 namespace Celeste.Mod.WonderTools.TasRecording
 {
@@ -16,19 +25,26 @@ namespace Celeste.Mod.WonderTools.TasRecording
     {
         public static TasRecordingManager Instance { get; private set; }
 
-        private readonly List<String> lines = new();
-        private readonly TasRecordingFile room;
-        private readonly TasRecordingFile attempt;
-        private readonly TasRecordingFile playback;
-        private readonly TasRecordingFile flex;
+        private TasRecordingFile room;
+        private TasRecordingFile attempt;
+        private TasRecordingFile playback;
+        private TasRecordingFile flex;
+        private TasRecordingFile replayBuffer;
+        private TasRecordingFile manual;
         private readonly List<TasRecordingFile> tasRecordingFiles;
         public static bool Paused { get; set; }
         public static bool PausedPrev { get; set; }
         public static bool LevelPaused { get; set; }
         public static bool LevelWasPaused { get; set; }
         public static bool WasPaused { get; set; }
+        public static bool StateSaved { get; set; } = false;
 
         public static TasRecordingState InputState { get; set; }
+        public uint WaitingForChange { get; private set; }
+        public static TasRecordingState ReplayBufferLoadInputState { get; set; }
+        private bool replayBufferActive = false;
+        private bool recordingActive = false;
+        private string levelSignature = null;
         public enum ButtonInputState
         {
             BUTTON_NOT_PRESSED = 0,
@@ -37,35 +53,32 @@ namespace Celeste.Mod.WonderTools.TasRecording
         }
         public struct InitTasRecordingOptions
         {
-            public bool fileClear;
-            public bool fileRestart;
-            public bool fileContinue;
+            public bool append;
+            public bool copy;
+            public bool noFile;
         }
         public TasRecordingManager()
         {
             Instance = this;
             Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"TasRecordingManager init");
-            WonderLog("initting tasrecordingmanager");
-            playback = new TasRecordingFile("playback");
-            room = new TasRecordingFile("room");
-            attempt = new TasRecordingFile("attempt");
-            flex = new TasRecordingFile("flex");
+
+            room = new TasRecordingFile("room", new InitTasRecordingOptions { append = false });
+            flex = new TasRecordingFile("flex", new InitTasRecordingOptions { noFile = true, append = false }); 
             tasRecordingFiles = new List<TasRecordingFile>
             {
                 flex,
                 room,
-                attempt,
-                playback
             };
         }
         public void OnUpdate()
         {
+            if (Engine.Scene is not Level level) { return; }
             /* can't init during constructor for some reason */
-            if (null == InputState && WonderToolsModule.Settings.Enabled)
+            if (null == InputState)
             {
+                /* TODO: this sucks */
                 try
                 {
-                    WonderLog("initting tas recording state rn from inside tasrecording manager");
                     InputState = new TasRecordingState();
                 }
                 catch
@@ -74,54 +87,128 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 }
             }
 
+            if (WonderToolsModule.Settings.ReplayBuffer && !replayBufferActive)
+            {
+                WonderLog("Init replay buffer");
+                replayBufferActive = true;
+
+            }
+            if (!WonderToolsModule.Settings.ReplayBuffer && replayBufferActive)
+            {
+                WonderLog("Close replay buffer");
+                replayBufferActive = false;
+            }
+
+            if (WonderToolsModule.Settings.KeyBufferSaveAttemptRecording.Released && WonderToolsModule.Settings.ReplayBuffer)
+            {
+                WonderLog("Saving Attempt");
+                WonderLog($"{WonderToolsModule.Settings.ReplayBuffer} {replayBufferActive}");
+                attempt.AppendBreakpoint();
+                attempt.AppendLines(flex.Lines);
+                SavePlaybackTasRecordingFile(attempt);
+                attempt.WriteAndCloseTasRecordingFile();
+            }
+
             if (WonderToolsModule.Settings.KeyStartRecording.Pressed)
             {
-                InitTasRecordingOptions options = default;
+                InitTasRecordingOptions options = new();
                 InputState = new TasRecordingState();
-                if (!flex.IsOpen)
-                {
-                    options.fileContinue = true;
-                    Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), "Enabling recording");
-                }
-                else
-                {
-                    options.fileRestart = true;
-                    Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), "Restarting recording");
-                }
-                flex.InitTasRecordingFile(options);
-                flex.IsOpen = true;
+                manual = new TasRecordingFile($"{DateTime.Now:yyMMddTHHmmss}_{levelSignature}", options);
+                manual.AppendConsoleCommand();
+                manual.AppendBreakpoint();
+                recordingActive = true;
             }
-            else if (WonderToolsModule.Settings.KeyStopRecording.Pressed)
+            else if (recordingActive && WonderToolsModule.Settings.KeyStopRecording.Pressed)
             {
-                if (!flex.IsOpen) { return; }
-                flex.IsOpen = false;
-                flex.SaveTasRecordingFile();
+                manual.SetName(manual.filename + InputState.frameTotal);
+                SavePlaybackTasRecordingFile(manual);
+                manual.WriteAndCloseTasRecordingFile();
+                recordingActive = false;
             }
-            if (!WonderToolsModule.Settings.ReplayBuffer && !flex.IsOpen) return;
 
+            if (!recordingActive && !WonderToolsModule.Settings.ReplayBuffer) { return; }
+
+            /* main update */
             UpdatePauseState();
             InputState.Update();
+            /* *********** */
 
-            if (flex.IsOpen && InputState.Changed())
+            if (InputState.Changed())
             {
-                flex.AppendTasLine();
+                if (0 != WaitingForChange)
+                {
+                    InputState.frameTotal = WaitingForChange + 1;
+                    WaitingForChange = 0;
+                }
+                if (0 == WaitingForChange) 
+                {
+                    if (recordingActive) { manual.AppendTasLine(); }
+                    flex.AppendTasLine();
+                }
                 InputState.framesSinceChange = 0;
             }
+        }
+
+        private void SavePlaybackTasRecordingFile(TasRecordingFile file)
+        {
+            playback = new TasRecordingFile("playback", new InitTasRecordingOptions { copy = true }, file.Lines);
+            playback.WriteAndCloseTasRecordingFile();
         }
 
         public void OnSaveState()
         {
             Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Tas save state hook");
+            if (WonderToolsModule.Settings.ReplayBuffer)
+            {
+                StateSaved = true;
+                attempt = new TasRecordingFile("attempt", new InitTasRecordingOptions { copy = true }, flex.Lines);
+                ReplayBufferLoadInputState = InputState.ShallowClone();
+            }
         }
+
         public void OnLoadState()
         {
             Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Tas load state hook");
+            if (WonderToolsModule.Settings.ReplayBuffer && StateSaved)
+            {
+                flex.ClearTextTasRecordingFile();
+                flex.AppendLines(attempt.Lines);
+                InputState = ReplayBufferLoadInputState.ShallowClone();
+                WaitingForChange = InputState.frameTotal;
+            }
+        }
+
+        public void Level_OnExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow)
+        {
+            WonderLog($"Level exit {level.Session.Level}");
+            if (recordingActive)
+            {
+                SavePlaybackTasRecordingFile(manual);
+                manual.WriteAndCloseTasRecordingFile();
+            }
+        }
+
+        public void LevelLoader_OnLoadingThread(Level level)
+        {
+            flex = new TasRecordingFile("flex", new InitTasRecordingOptions { noFile = true, append = false }); 
+            flex.AppendLevelComment(level.Session.Level);
+
+            string[] levelSID = level.Session?.Area.GetSID().Split('/');
+            if (0 != levelSID.Length)
+            {
+                levelSignature = levelSID[^1];
+            }
         }
 
         public void Level_OnLoad(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
         {
             Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Tas level on load hook {level.Session.Level}");
-            if (!flex.IsOpen) { return; }
+            if (WonderToolsModule.Settings.ReplayBuffer)
+            {
+                room = new TasRecordingFile("room", new InitTasRecordingOptions { copy = true }, flex.Lines);
+            }
+            flex.AppendLevelComment(level.Session.Level);
+            if (recordingActive) { manual.AppendLevelComment(level.Session.Level); }
         }
 
         public static void AppendTasInputStr(ref string inputLine, string inputStr)
@@ -149,16 +236,10 @@ namespace Celeste.Mod.WonderTools.TasRecording
             }
         }
 
-        public override String ToString()
+        public static string HeaderString()
         {
-            String ret = Environment.NewLine;
-            int ii = 0;
-            foreach (String line in lines)
-            {
-                ii++;
-                ret += ii + " " + line + Environment.NewLine;
-            }
-            return ret;
+            return $"# This file was autogenerated by {nameof(WonderToolsModule)} on {DateTime.Now}";
         }
-    }
+
+     }
 }

@@ -125,12 +125,15 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 DashState = ButtonInputState.BUTTON_SECONDARY;
             }
             else if (_button == Input.QuickRestart) AppendTasInputStr(ref ret, "Q");
-            else if (_button == Input.MenuJournal) AppendTasInputStr(ref ret, "N");
+            else if (LevelPaused && _button == Input.MenuJournal)
+            {
+                AppendTasInputStr(ref ret, "N");
+            }
             else if (_button == Input.Talk)
             {
                 if (Pressed) bufferFrames = 0;
                 if (bufferFrames < MAX_BUFFER_INPUT_FRAMES)
-                { 
+                {
                     AppendTasInputStr(ref ret, "N");
                 }
             }
