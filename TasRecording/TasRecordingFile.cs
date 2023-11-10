@@ -136,6 +136,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public void AppendConsoleCommand()
         {
             Lines.Add(CelesteTasIntegration.CreateConsoleCommand(false));
+            Lines.Add(string.Format("{0, 4}", "1"));
             Lines.Add(string.Format("{0, 4}", "36"));
             Lines.Add(string.Empty);
         }
