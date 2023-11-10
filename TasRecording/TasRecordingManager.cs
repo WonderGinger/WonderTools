@@ -113,14 +113,14 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 InitTasRecordingOptions options = new();
                 InputState = new TasRecordingState();
-                manual = new TasRecordingFile($"{DateTime.Now:yyMMddTHHmmss}_{levelSignature}", options);
+                manual = new TasRecordingFile($"{DateTime.Now:yyMMddHHmmss}_{levelSignature}", options);
                 manual.AppendConsoleCommand();
                 manual.AppendBreakpoint();
                 recordingActive = true;
             }
             else if (recordingActive && WonderToolsModule.Settings.KeyStopRecording.Pressed)
             {
-                manual.SetName(manual.filename + InputState.frameTotal);
+                manual.SetName(manual.filename + $"_{InputState.frameTotal}f");
                 SavePlaybackTasRecordingFile(manual);
                 manual.WriteAndCloseTasRecordingFile();
                 recordingActive = false;
