@@ -99,59 +99,8 @@ namespace Celeste.Mod.WonderTools
 		}
         public static void WonderLog(string s)
         {
-            Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), s);
+            Logger.Log(LogLevel.Debug, nameof(WonderTools), s);
         }
-
-    //public static string CreateConsoleCommand(bool simple) {
-    //        if (Engine.Scene is Emulator {game.room: var room}) {
-    //            return $"console pico {room.X} {room.Y}";
-    //        }
-            
-    //        if (Engine.Scene is not Level level) {
-    //            return null;
-    //        }
-
-    //        AreaKey area = level.Session.Area;
-    //        string mode = null;
-    //        switch (area.Mode) {
-    //            case AreaMode.Normal:
-    //                mode = "load";
-    //                break;
-    //            case AreaMode.BSide:
-    //                mode = "hard";
-    //                break;
-    //            case AreaMode.CSide:
-    //                mode = "rmx2";
-    //                break;
-    //        }
-
-    //        string id = area.ID <= 10 ? area.ID.ToString() : area.GetSID();
-    //        string separator = id.Contains(" ") ? ", " : " ";
-    //        List<string> values = new() {"console", mode, id};
-
-    //        if (!simple) {
-    //            Player player = level.Tracker.GetEntity<Player>();
-    //            if (player == null) {
-    //                values.Add(level.Session.Level);
-    //            } else {
-    //                double x = player.X;
-    //                double y = player.Y;
-    //                double subX = player.movementCounter.X;
-    //                double subY = player.movementCounter.Y;
-
-    //                string format = "0.".PadRight(CelesteTasSettings.MaxDecimals + 2, '#');
-    //                values.Add((x + subX).ToString(format, CultureInfo.InvariantCulture));
-    //                values.Add((y + subY).ToString(format, CultureInfo.InvariantCulture));
-
-    //                if (player.Speed != Vector2.Zero) {
-    //                    values.Add(player.Speed.X.ToString(CultureInfo.InvariantCulture));
-    //                    values.Add(player.Speed.Y.ToString(CultureInfo.InvariantCulture));
-    //                }
-    //            }
-    //        }
-
-    //        return string.Join(separator, values);
-    //    }
     }
 }
 

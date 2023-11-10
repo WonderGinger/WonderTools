@@ -113,17 +113,14 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 InitTasRecordingOptions options = new();
                 InputState = new TasRecordingState();
-                manual = new TasRecordingFile($"{DateTime.Now:yyMMddHHmmss}_{levelSignature}", options);
+                manual = new TasRecordingFile($"recording_{DateTime.Now:yyMMddHHmmss}_{levelSignature}", options);
                 manual.AppendConsoleCommand();
                 manual.AppendBreakpoint();
                 recordingActive = true;
             }
             else if (recordingActive && WonderToolsModule.Settings.KeyStopRecording.Pressed)
             {
-                manual.SetName(manual.filename + $"_{InputState.frameTotal}f");
-                SavePlaybackTasRecordingFile(manual);
-                manual.WriteAndCloseTasRecordingFile();
-                recordingActive = false;
+                FinishManual();
             }
 
             if (!recordingActive && !WonderToolsModule.Settings.ReplayBuffer) { return; }
@@ -147,6 +144,14 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 }
                 InputState.framesSinceChange = 0;
             }
+        }
+
+        private void FinishManual() 
+        {
+            manual.SetName(manual.filename + $"_{InputState.frameTotal}f");
+            SavePlaybackTasRecordingFile(manual);
+            manual.WriteAndCloseTasRecordingFile();
+            recordingActive = false;
         }
 
         private void SavePlaybackTasRecordingFile(TasRecordingFile file)
@@ -183,14 +188,14 @@ namespace Celeste.Mod.WonderTools.TasRecording
             WonderLog($"Level exit {level.Session.Level}");
             if (recordingActive)
             {
-                SavePlaybackTasRecordingFile(manual);
-                manual.WriteAndCloseTasRecordingFile();
+                FinishManual();
             }
         }
 
         public void LevelLoader_OnLoadingThread(Level level)
         {
-            flex = new TasRecordingFile("flex", new InitTasRecordingOptions { noFile = true, append = false }); 
+            flex = new TasRecordingFile("flex", new InitTasRecordingOptions { noFile = true, append = false });
+            attempt = new TasRecordingFile("attempt");
             flex.AppendLevelComment(level.Session.Level);
 
             string[] levelSID = level.Session?.Area.GetSID().Split('/');

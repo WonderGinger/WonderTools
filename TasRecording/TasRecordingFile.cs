@@ -71,6 +71,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         public void ClearTextTasRecordingFile()
         {
+            if (!File.Exists(path)) { return; }
             Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"Clearing recording file {path}");
             if (IsOpen)
             {
