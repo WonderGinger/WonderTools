@@ -72,7 +72,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
         public void ClearTextTasRecordingFile()
         {
             if (!File.Exists(path)) { return; }
-            Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"Clearing recording file {path}");
+            //Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"Clearing recording file {path}");
             if (IsOpen)
             {
                 CloseTasRecordingFile();
@@ -121,10 +121,9 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         }
 
-        private void ResetTasRecordingFile()
+        public void ResetTasRecordingFile()
         {
-            Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"Clearing {filename}");
-            File.WriteAllText(path, string.Empty);
+            ClearTextTasRecordingFile();
             Lines.Clear();
         }
 

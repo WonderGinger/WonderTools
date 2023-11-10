@@ -49,8 +49,6 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         public TasRecordingState()
         {
-            Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"TasRecordingState init");
-
             frameTotal = 0;
             framesSinceChange = 0;
 

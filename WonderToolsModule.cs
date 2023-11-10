@@ -99,7 +99,7 @@ namespace Celeste.Mod.WonderTools
 		}
         public static void WonderLog(string s)
         {
-            Logger.Log(LogLevel.Debug, nameof(WonderTools), s);
+            Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), s);
         }
     }
 }

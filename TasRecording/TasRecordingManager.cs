@@ -57,6 +57,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
             public bool copy;
             public bool noFile;
         }
+        private bool appendConsoleCommandNextFrame = false;
         public TasRecordingManager()
         {
             Instance = this;
@@ -113,8 +114,16 @@ namespace Celeste.Mod.WonderTools.TasRecording
             {
                 InitTasRecordingOptions options = new();
                 InputState = new TasRecordingState();
-                manual = new TasRecordingFile($"recording_{DateTime.Now:yyMMddHHmmss}_{levelSignature}", options);
-                manual.AppendConsoleCommand();
+                if (recordingActive)
+                {
+                    manual = new TasRecordingFile($"recording_{DateTime.Now:yyMMddHHmmss}_{levelSignature}");
+                    manual.AppendConsoleCommand();
+                }
+                else
+                {
+                    options.copy = true;
+                    manual = new TasRecordingFile($"recording_{DateTime.Now:yyMMddHHmmss}_{levelSignature}", options, flex.Lines);
+                }
                 manual.AppendBreakpoint();
                 recordingActive = true;
             }
@@ -123,7 +132,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 FinishManual();
             }
 
-            if (!recordingActive && !WonderToolsModule.Settings.ReplayBuffer) { return; }
+            //if (!recordingActive && !WonderToolsModule.Settings.ReplayBuffer) { return; }
 
             /* main update */
             UpdatePauseState();
@@ -144,11 +153,19 @@ namespace Celeste.Mod.WonderTools.TasRecording
                 }
                 InputState.framesSinceChange = 0;
             }
+
+            // this can't be done on level load due to timing being too early
+            if (appendConsoleCommandNextFrame)
+            {
+                flex.AppendConsoleCommand();
+                if (recordingActive) { manual.AppendConsoleCommand(); }
+                appendConsoleCommandNextFrame = false;
+            }
         }
 
         private void FinishManual() 
         {
-            manual.SetName(manual.filename + $"_{InputState.frameTotal}f");
+            //manual.SetName(manual.filename + $"_{InputState.frameTotal}f");
             SavePlaybackTasRecordingFile(manual);
             manual.WriteAndCloseTasRecordingFile();
             recordingActive = false;
@@ -162,22 +179,33 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         public void OnSaveState()
         {
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Tas save state hook");
+            StateSaved = true;
+            flex.AppendBreakpoint();
+            //Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"Tas save state hook");
             if (WonderToolsModule.Settings.ReplayBuffer)
             {
-                StateSaved = true;
                 attempt = new TasRecordingFile("attempt", new InitTasRecordingOptions { copy = true }, flex.Lines);
-                ReplayBufferLoadInputState = InputState.ShallowClone();
             }
+
+            if (recordingActive)
+            {
+                manual = new TasRecordingFile($"recording_{DateTime.Now:yyMMddHHmmss}_{levelSignature}", new InitTasRecordingOptions { copy = true }, flex.Lines);
+            }
+            ReplayBufferLoadInputState = InputState.ShallowClone();
         }
 
         public void OnLoadState()
         {
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Tas load state hook");
+            //Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"Tas load state hook");
             if (WonderToolsModule.Settings.ReplayBuffer && StateSaved)
             {
-                flex.ClearTextTasRecordingFile();
+                flex.ResetTasRecordingFile();
                 flex.AppendLines(attempt.Lines);
+                if (recordingActive)
+                {
+                    manual.ResetTasRecordingFile();
+                    manual.AppendLines(attempt.Lines);
+                }
                 InputState = ReplayBufferLoadInputState.ShallowClone();
                 WaitingForChange = InputState.frameTotal;
             }
@@ -185,7 +213,7 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         public void Level_OnExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow)
         {
-            WonderLog($"Level exit {level.Session.Level}");
+            //WonderLog($"Level exit {level.Session.Level}");
             if (recordingActive)
             {
                 FinishManual();
@@ -196,7 +224,12 @@ namespace Celeste.Mod.WonderTools.TasRecording
         {
             flex = new TasRecordingFile("flex", new InitTasRecordingOptions { noFile = true, append = false });
             attempt = new TasRecordingFile("attempt");
-            flex.AppendLevelComment(level.Session.Level);
+            appendConsoleCommandNextFrame = true;
+            
+            if (recordingActive)
+            {
+                manual = new TasRecordingFile($"recording_{DateTime.Now:yyMMddHHmmss}_{levelSignature}", new InitTasRecordingOptions { copy = true }, flex.Lines);
+            }
 
             string[] levelSID = level.Session?.Area.GetSID().Split('/');
             if (0 != levelSID.Length)
@@ -207,7 +240,8 @@ namespace Celeste.Mod.WonderTools.TasRecording
 
         public void Level_OnLoad(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
         {
-            Logger.Log(LogLevel.Info, nameof(WonderToolsModule), $"Tas level on load hook {level.Session.Level}");
+            //Logger.Log(LogLevel.Debug, nameof(WonderToolsModule), $"Tas level on load hook {level.Session.Level}");
+            // TODO: need to keep a previous room and current room file
             if (WonderToolsModule.Settings.ReplayBuffer)
             {
                 room = new TasRecordingFile("room", new InitTasRecordingOptions { copy = true }, flex.Lines);
